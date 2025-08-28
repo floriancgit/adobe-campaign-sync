@@ -8,6 +8,12 @@ Synchronize any object (Schema, Form, JSSP...) from Adobe Campaign to your own G
 - 0.0.2: Added .env as a command line arg for multi instances handling, Removed git.js
 - 0.0.1: First release
 
+## Run
+
+```bash
+$ node cli download -c config/localhost
+```
+
 ## Installation
 
 ## Prerequisites
