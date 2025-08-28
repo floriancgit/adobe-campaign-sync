@@ -1,12 +1,14 @@
 {
   "name": "adobe-campaign-sync",
   "version": "0.0.2",
-  "description": "",
-  "main": "",
+  "description": "Synchronize any object (Schema, Form, JSSP...) from Adobe Campaign to your own Git repo (Github, Bitbucket...).",
+  "main": "index.js",
   "dependencies": {
     "cheerio": "^1.0.0-rc.3",
+    "commander": "^14.0.0",
     "dotenv": "^8.1.0",
     "fs-extra": "^8.1.0",
+    "js-yaml": "^4.1.0",
     "lodash": "^4.17.15",
     "log4js": "^6.3.0",
     "moment": "^2.24.0",
@@ -24,5 +26,20 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "directories": {
+    "doc": "doc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/floriancgit/adobe-campaign-sync.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/floriancgit/adobe-campaign-sync/issues"
+  },
+  "homepage": "https://github.com/floriancgit/adobe-campaign-sync#readme",
+  "bin": {
+    "adobe-campaign-sync": "./cli.js"
+  }
 }
