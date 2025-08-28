@@ -10,7 +10,7 @@ const { downloadAndParse } = require('./src/ParseService.js')
 program
   .name('adobe-campaign-sync')
   .description('Adobe Campaign Synchronization')
-  .version('1.0.0');
+  .version('1.1.0');
 
 var config;
 program

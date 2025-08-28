@@ -140,21 +140,16 @@ function generateDoc(config, specFileDefinition, onSuccessHandler){
           throw errFs;
         });
       }
-      if(errSoap){
+      // sometimes, it breaks with a false-positive error
+      if(errSoap && errSoap.Fault && errSoap.Fault.detail == 'Error: Non-whitespace before first tag.\nLine: 0\nColumn: 1\nChar: /'){
+        logger.warn('False positive error', errSoap.Fault);
+      }
+      else if(errSoap){
         const archiveResponse = 'errors/'+moment().format('YYYY/MM/DD/HHmmss-SSS')+'-generateDoc-error.xml';
-        // fs.outputFileSync(archiveResponse, errSoap.Fault, function (errFs) {
-        //   throw errFs;
-        // });
+        fs.outputFileSync(archiveResponse, JSON.stringify(errSoap.Fault), function (errFs) {
+          throw errFs;
+        });
         logger.debug('soap generateDoc.GenerateDoc ERROR:'/*, err*/);
-        if(errSoap.Fault){
-          logger.error(errSoap.Fault.faultcode);
-          logger.error(errSoap.Fault.faultstring);
-          logger.error(errSoap.Fault.detail);
-          logger.error(errSoap.Fault.statusCode);
-        }
-        for(var x in rawResponse){
-          console.log(x);
-        }
         process.exit();
         return;
       }

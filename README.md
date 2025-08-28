@@ -5,13 +5,15 @@ Synchronize any object (Schema, Form, JSSP...) from Adobe Campaign to your own G
 
 ## Changelog
 
+- 1.1.0: Fixed the false-positive error `Error: Non-whitespace before first tag.\nLine: 0\nColumn: 1\nChar: /`
+- 1.0.0: Migrated to Commander framework
 - 0.0.2: Added .env as a command line arg for multi instances handling, Removed git.js
 - 0.0.1: First release
 
 ## Run
 
 ```bash
-$ node cli download -c config/localhost
+$ node cli download -c config/localhost.yaml
 ```
 
 ## Installation
