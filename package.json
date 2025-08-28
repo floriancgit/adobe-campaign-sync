@@ -14,6 +14,7 @@
     "sanitize-filename": "^1.6.3",
     "simple-git": "^1.126.0",
     "soap": "^0.29.0",
+    "tmp": "^0.2.5",
     "yargs": "^17.6.2"
   },
   "devDependencies": {

@@ -1,6 +1,7 @@
 const FCO_ACC = require('./FCO_ACC.js'); // FCO lib
 const cheerio = require('cheerio'); // light jquery
 const fs = require('fs-extra'); // filesystem extensions
+const tmp = require('tmp');
 // const _ = require('lodash'); // js extensions
 const sanitize_filename = require("sanitize-filename"); // get clean filename
 const pd = require('pretty-data').pd;
@@ -12,6 +13,7 @@ if(!process.env.PACKAGES){
   process.exit();
 }
 
+logger.debug('instanceDir: '+instanceDir);
 
 const folders = [];
 
@@ -245,6 +247,13 @@ function getFolderFullNameByName(xtkQueryDefClient, folderName){
 // logon > getSpecFile > generateDoc > parseFinalPackage
 FCO_ACC.logon(function(data){
   FCO_ACC.getSpecFile(process.env.PACKAGES, function(result, rawResponse, soapHeader, rawRequest){
+    const tmpobj = tmp.fileSync({prefix: 'FCO_ACC', postfix: '.xml'});
+    logger.debug('Raw XML ready: ', tmpobj.name);
+    tmpobj.removeCallback();
+    fs.outputFileSync(tmpobj.name, rawResponse, function (err) {
+      throw err;
+    });
+    logger.debug('Raw XML saved: ', tmpobj.name);
     const $ = cheerio.load(rawResponse, FCO_ACC.htmlparserOptions);
     var specFileDefinition = $('pdomOutput').html();
     logger.debug('XML Definition OK');
