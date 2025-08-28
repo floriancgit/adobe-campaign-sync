@@ -1,0 +1,20 @@
+# log4js log level
+LOGGER_LEVEL: debug
+# Public URL to soaprouter.jsp endpoint
+ACC_ENDPOINT: http://localhost:8080/nl/jsp/soaprouter.jsp
+# Login username
+ACC_USER: admin
+# Login password
+ACC_PWD: admin
+# HTTP Proxy
+http_proxy: http://x.x.x.x:port/
+# Package XTK request
+PACKAGES: <condition expr="@namespace = 'fco' AND @name = 'gitBackup'" />
+# WSDL
+WSDL_XTK_SESSION: ./wsdl/wsdl_xtk_session.xml
+WSDL_XTK_QUERYDEF: ./wsdl/wsdl_xtk_queryDef.xml
+WSDL_XTK_SPECFILE: ./wsdl/wsdl_xtk_specFile.xml
+# Output folder
+INSTANCE_DIR: ./instance
+# Archives
+SAVE_ARCHIVES: true

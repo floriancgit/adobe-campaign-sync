@@ -1,24 +1,19 @@
-const FCO_ACC = require('./FCO_ACC.js'); // FCO lib
+const FCO_ACC = require('./DownloadService.js'); // FCO lib
 const cheerio = require('cheerio'); // light jquery
 const fs = require('fs-extra'); // filesystem extensions
 const tmp = require('tmp');
 // const _ = require('lodash'); // js extensions
 const sanitize_filename = require("sanitize-filename"); // get clean filename
 const pd = require('pretty-data').pd;
-const logger = require('./Logger.js');
-const instanceDir = process.env.INSTANCE_DIR;
-
-if(!process.env.PACKAGES){
-  logger.debug('Define .env.PACKAGES');
-  process.exit();
-}
-
-logger.debug('instanceDir: '+instanceDir);
+const log4js = require("log4js");
+const logger = log4js.getLogger("ParseService");
+logger.level = "debug";
 
 const folders = [];
 
-function parseFinalPackage(result, rawResponse, soapHeader, rawRequest){
+function parseFinalPackage(config, result, rawResponse, soapHeader, rawRequest){
   logger.debug('parseFinalPackage...');
+  const instanceDir = config.INSTANCE_DIR;
 
   // const tmpobj = tmp.fileSync({prefix: 'FCO_ACC', postfix: 'generateDoc.xml'});
   //   logger.debug('generateDoc ready: ', tmpobj.name);
@@ -216,7 +211,7 @@ function parseFinalPackage(result, rawResponse, soapHeader, rawRequest){
       return;
     }
     var filename = sanitize_filename($this.attr('label')+' ('+$this.attr('internalName')+') ('+$this.attr('id')+')');
-    var path = instanceDir+acFolder+filename+process.env.WORKFLOW_EXTENSION;
+    var path = instanceDir+acFolder+filename+config.WORKFLOW_EXTENSION;
     logger.debug('saved to path', path);
     // read again
     var content = cheerio.load(this, htmlparserOptions).xml();
@@ -264,18 +259,25 @@ function getFolderFullNameByName(xtkQueryDefClient, folderName){
 }
 
 // logon > getSpecFile > generateDoc > parseFinalPackage
-FCO_ACC.logon(function(data){
-  FCO_ACC.getSpecFile(process.env.PACKAGES, function(result, rawResponse, soapHeader, rawRequest){
-    const tmpobj = tmp.fileSync({prefix: 'FCO_ACC', postfix: 'getSpecFile.xml'});
-    logger.debug('getSpecFile ready: ', tmpobj.name);
-    tmpobj.removeCallback();
-    fs.outputFileSync(tmpobj.name, rawResponse, function (err) {
-      throw err;
+function downloadAndParse(config){
+  logger.debug('instanceDir: '+config.INSTANCE_DIR);
+  FCO_ACC.logon(config, function(data){
+    FCO_ACC.getSpecFile(config, config.PACKAGES, function(result, rawResponse, soapHeader, rawRequest){
+      const tmpobj = tmp.fileSync({prefix: 'FCO_ACC', postfix: 'getSpecFile.xml'});
+      logger.debug('getSpecFile ready: ', tmpobj.name);
+      tmpobj.removeCallback();
+      fs.outputFileSync(tmpobj.name, rawResponse, function (err) {
+        throw err;
+      });
+      logger.debug('getSpecFile ready: ', tmpobj.name);
+      const $ = cheerio.load(rawResponse, FCO_ACC.htmlparserOptions);
+      var specFileDefinition = $('pdomOutput').html();
+      logger.debug('XML Definition OK');
+      FCO_ACC.generateDoc(config, specFileDefinition, parseFinalPackage);
     });
-    logger.debug('getSpecFile ready: ', tmpobj.name);
-    const $ = cheerio.load(rawResponse, FCO_ACC.htmlparserOptions);
-    var specFileDefinition = $('pdomOutput').html();
-    logger.debug('XML Definition OK');
-    FCO_ACC.generateDoc(specFileDefinition, parseFinalPackage);
   });
-});
+}
+
+module.exports = {
+  downloadAndParse
+}
