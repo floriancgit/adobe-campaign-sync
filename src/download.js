@@ -20,6 +20,14 @@ const folders = [];
 function parseFinalPackage(result, rawResponse, soapHeader, rawRequest){
   logger.debug('parseFinalPackage...');
 
+  // const tmpobj = tmp.fileSync({prefix: 'FCO_ACC', postfix: 'generateDoc.xml'});
+  //   logger.debug('generateDoc ready: ', tmpobj.name);
+  //   tmpobj.removeCallback();
+  //   fs.outputFileSync(tmpobj.name, rawResponse, function (err) {
+  //     throw err;
+  //   });
+  //   logger.debug('generateDoc ready: ', tmpobj.name);
+
   const $ = cheerio.load(rawResponse, FCO_ACC.htmlparserOptions);
 
   // package structure:
@@ -37,9 +45,13 @@ function parseFinalPackage(result, rawResponse, soapHeader, rawRequest){
     var namespacedSchema = $this.attr('schema');
     var namespace = namespacedSchema.split(':')[0];
     var schema = namespacedSchema.split(':')[1];
-    logger.debug('- Namespaced Schema: '+namespacedSchema);
+    logger.debug('- Namespaced Schema: '+namespacedSchema+', listing "'+schema+'" with '+$this.children().length+' children:');
     // for each entity
-    $this.children(schema).each(function(i, elem){
+    $this.children().each(function(i, elem){
+      if(elem.tagName.toLowerCase() != schema.toLowerCase()){
+        logger.debug('(child skipped because tagName '+elem.tagName+') doesn\'t match');
+        return;
+      }
       const $this = $(this);
       var dir, filename;
       // if it has a folder
@@ -95,6 +107,13 @@ function parseFinalPackage(result, rawResponse, soapHeader, rawRequest){
         case 'xtk:jssp':
           dir = instanceDir+'/Administration/Configuration/Dynamic JavaScript pages/'+$this.attr('namespace')+'/';
           filename = $this.attr('name')+'.js';
+          break;
+        case 'xtk:folder':
+          dir = instanceDir+'/Explorer/';
+          filename = $this.attr('name')+'.xml';
+          /// edit XML
+          html = pd.xml(html); // pretty print
+          /// end edit XML
           break;
         case 'xtk:formRendering':
           dir = instanceDir+'/Administration/Configuration/Form rendering/';
@@ -247,13 +266,13 @@ function getFolderFullNameByName(xtkQueryDefClient, folderName){
 // logon > getSpecFile > generateDoc > parseFinalPackage
 FCO_ACC.logon(function(data){
   FCO_ACC.getSpecFile(process.env.PACKAGES, function(result, rawResponse, soapHeader, rawRequest){
-    const tmpobj = tmp.fileSync({prefix: 'FCO_ACC', postfix: '.xml'});
-    logger.debug('Raw XML ready: ', tmpobj.name);
+    const tmpobj = tmp.fileSync({prefix: 'FCO_ACC', postfix: 'getSpecFile.xml'});
+    logger.debug('getSpecFile ready: ', tmpobj.name);
     tmpobj.removeCallback();
     fs.outputFileSync(tmpobj.name, rawResponse, function (err) {
       throw err;
     });
-    logger.debug('Raw XML saved: ', tmpobj.name);
+    logger.debug('getSpecFile ready: ', tmpobj.name);
     const $ = cheerio.load(rawResponse, FCO_ACC.htmlparserOptions);
     var specFileDefinition = $('pdomOutput').html();
     logger.debug('XML Definition OK');
