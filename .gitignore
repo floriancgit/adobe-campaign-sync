@@ -4,3 +4,5 @@ node_modules
 instance
 archives
 errors
+config/*
+!config/localhost.yaml

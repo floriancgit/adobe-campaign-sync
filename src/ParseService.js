@@ -87,6 +87,10 @@ function parseFinalPackage(config, result, rawResponse, soapHeader, rawRequest){
           dir = instanceDir+'/Administration/Configuration/Data schemas/'+$this.attr('namespace')+'/';
           filename = $this.attr('name')+'.html';
           break;
+        case 'xtk:enum':
+          dir = instanceDir+'/Administration/Platform/Enumerations/';
+          filename = $this.attr('name')+'.html';
+          break;
         case 'xtk:form':
           dir = instanceDir+'/Administration/Configuration/Input forms/'+$this.attr('namespace')+'/';
           filename = $this.attr('name')+'.html';
@@ -155,6 +159,10 @@ function parseFinalPackage(config, result, rawResponse, soapHeader, rawRequest){
           break;
         case 'nms:includeView':
           dir = instanceDir+'/Resources/Campaign Management/Personalization blocks/';
+          filename = $this.attr('name')+'.html';
+          break;
+        case 'nms:namespace':
+          dir = instanceDir+'/Administration/Platform/Namespaces/';
           filename = $this.attr('name')+'.html';
           break;
         case 'nms:operation':
