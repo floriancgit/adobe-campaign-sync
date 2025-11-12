@@ -34,7 +34,9 @@ function parseFinalPackage(config, result, rawResponse, soapHeader, rawRequest){
   // </package>
 
   // for each entity (form, workflow...)
-  $('entities').each(function(i, elem){
+  const entities = $('entities');
+  logger.debug(`Found ${entities.length} elements with tag 'entities'`);
+  entities.each(function(i, elem){
     const $this = $(this);
     // get the entity name, i.e. "xtk:form"
     var namespacedSchema = $this.attr('schema');

@@ -12,8 +12,14 @@ Synchronize any object (Schema, Form, JSSP...) from Adobe Campaign to your own G
 
 ## Run
 
+Download + Parse
 ```bash
 $ node cli download -c config/localhost.yaml
+```
+
+Parse only (if package was manually downloaded from AC console)
+```bash
+$ node cli parse -c config/localhost.yaml -f ~/Downloads/acme-package.xml
 ```
 
 ## Installation
