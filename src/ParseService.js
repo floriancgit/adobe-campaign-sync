@@ -1,11 +1,13 @@
 const FCO_ACC = require('./DownloadService.js'); // FCO lib
 const cheerio = require('cheerio'); // light jquery
 const fs = require('fs-extra'); // filesystem extensions
+const sax = require('sax');
 const tmp = require('tmp');
 // const _ = require('lodash'); // js extensions
 const sanitize_filename = require("sanitize-filename"); // get clean filename
 const pd = require('pretty-data').pd;
 const log4js = require("log4js");
+const { exit } = require('yargs');
 const logger = log4js.getLogger("ParseService");
 logger.level = "debug";
 
@@ -15,6 +17,60 @@ function parseFinalPackage(config, result, rawResponse, soapHeader, rawRequest){
   logger.debug('parseFinalPackage...');
   const instanceDir = config.INSTANCE_DIR;
 
+  // TEST ZONE
+  const readStream = fs.createReadStream('C:\\Users\\fcourgey\\Downloads\\fresh-gitTest.xml');
+  const parser = sax.createStream(true, {});
+  let shouldParse = true;
+  let currentDepth = 0;
+  const maxDepth = 3; // Set the maximum depth you want to parse
+  parser.on('opentag', (node) => {
+    if (!shouldParse) return;
+    currentDepth++;
+    if (currentDepth > maxDepth) {
+      shouldParse = false;
+      console.log(`Maximum depth of ${maxDepth} reached. Stopping further parsing.`);
+      return;
+    }
+    // Process the opening tag
+    console.log(`${currentDepth}<${node.name}`);
+
+    // You can add additional logic here to handle attributes or other node properties
+    if (node.attributes) {
+      // console.log('Attributes:', node.attributes);
+    }
+  });
+  parser.on('text', (text) => {
+    if (!shouldParse) return;
+    // Process the text content
+    // console.log(`Text content: ${text}`);
+  });
+
+  parser.on('closetag', (tagName) => {
+    // Process the closing tag
+    console.log(`</${tagName}`);
+    currentDepth--;
+    if (currentDepth < maxDepth) {
+      shouldParse = true;
+    }
+  });
+
+  parser.on('end', () => {
+    console.log('Finished parsing the XML file');
+  });
+
+  parser.on('error', (error) => {
+    console.error('Error parsing XML:', error);
+  });
+
+  // Pipe the read stream to the SAX parser
+  readStream.pipe(parser);
+
+  return;
+
+
+
+  // END TEST ZONE
+
   // const tmpobj = tmp.fileSync({prefix: 'FCO_ACC', postfix: 'generateDoc.xml'});
   //   logger.debug('generateDoc ready: ', tmpobj.name);
   //   tmpobj.removeCallback();
@@ -23,7 +79,8 @@ function parseFinalPackage(config, result, rawResponse, soapHeader, rawRequest){
   //   });
   //   logger.debug('generateDoc ready: ', tmpobj.name);
 
-  const $ = cheerio.load(rawResponse, FCO_ACC.htmlparserOptions);
+  const fullDocument = false;
+  const $ = cheerio.load(rawResponse, FCO_ACC.htmlparserOptions, fullDocument);
 
   // package structure:
   // <package>
