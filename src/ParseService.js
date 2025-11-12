@@ -13,6 +13,125 @@ logger.level = "debug";
 
 const folders = [];
 
+function getDir(instanceDir, namespacedSchema, node){
+  switch(namespacedSchema){
+    // XTK
+    case 'xtk:srcSchema':
+      dir = instanceDir+'/Administration/Configuration/Data schemas/'+node.attributes.namespace+'/';
+      filename = node.attributes.name+'.html';
+      break;
+    case 'xtk:enum':
+      dir = instanceDir+'/Administration/Platform/Enumerations/';
+      filename = node.attributes.name+'.html';
+      break;
+    case 'xtk:form':
+      dir = instanceDir+'/Administration/Configuration/Input forms/'+node.attributes.namespace+'/';
+      filename = node.attributes.name+'.html';
+      break;
+    case 'xtk:navtree':
+      dir = instanceDir+'/Administration/Configuration/Navigation hierarchies/'+node.attributes.namespace+'/';
+      filename = node.attributes.name+'.html';
+      break;
+    case 'xtk:javascript':
+      dir = instanceDir+'/Administration/Configuration/JavaScript codes/'+node.attributes.namespace+'/';
+      filename = node.attributes.name+'.js';
+      break;
+    case 'xtk:jssp':
+      dir = instanceDir+'/Administration/Configuration/Dynamic JavaScript pages/'+node.attributes.namespace+'/';
+      filename = node.attributes.name+'.js';
+      break;
+    case 'xtk:folder':
+      dir = instanceDir+'/Explorer/';
+      filename = node.attributes.name+'.xml';
+      /// edit XML
+      html = pd.xml(html); // pretty print
+      /// end edit XML
+      break;
+    case 'xtk:formRendering':
+      dir = instanceDir+'/Administration/Configuration/Form rendering/';
+      filename = node.attributes.name+'.css';
+      break;
+    case 'xtk:sql':
+      dir = instanceDir+'/Administration/Configuration/SQL scripts/'+node.attributes.namespace+'/';
+      filename = node.attributes.name+'.sql';
+      break;
+    case 'xtk:xslt':
+      dir = instanceDir+'/Administration/Configuration/XSL style sheets/'+node.attributes.namespace+'/';
+      filename = node.attributes.name+'.html';
+      break;
+    case 'xtk:workflow':
+      dir = instanceDir+'/Administration/Production/';
+      filename = node.attributes.name+'.html';
+      /// edit XML
+      html = html.replace(/eventCount="\d+"/g, ''); // remove eventCount="111"
+      html = html.replace(/taskCount="\d+"/g, ''); //and taskCount="222"
+      // pretty print
+      html = pd.xml(html);
+      /// end edit XML
+      break;
+    // NMS
+    case 'nms:typology':
+      dir = instanceDir+'/Administration/Campaign Management/Typology management/Typologies/';
+      filename = node.attributes.name+'.html';
+      break;
+    case 'nms:typologyRule':
+      dir = instanceDir+'/Administration/Campaign Management/Typology management/Typology rules/';
+      filename = node.attributes.name+'.html';
+      break;
+    case 'nms:trackingUrl':
+      dir = instanceDir+'/Resources/Online/Web tracking tags/';
+      filename = node.attributes.name+'.html';
+      break;
+    case 'nms:webApp':
+      dir = instanceDir+'/Resources/Online/Web applications/';
+      filename = node.attributes.name+'.html';
+      break;
+    case 'nms:deliveryMapping':
+      dir = instanceDir+'/Administration/Campaign Management/Target mappings/';
+      filename = node.attributes.name+'.html';
+      break;
+    case 'nms:includeView':
+      dir = instanceDir+'/Resources/Campaign Management/Personalization blocks/';
+      filename = node.attributes.name+'.html';
+      break;
+    case 'nms:namespace':
+      dir = instanceDir+'/Administration/Platform/Namespaces/';
+      filename = node.attributes.name+'.html';
+      break;
+    case 'nms:operation':
+      dir = instanceDir+'/Campaign Management/Campaigns/';
+      filename = node.attributes.internalName+'.html';
+      /// edit XML
+      // remove nodes
+      //logger.debug($this.find('variables'));
+      // $this.find('variables').each(function(){
+      //   const $this = $(this);
+      //   // remove inside
+      //   $this.empty();
+      //   // TODO remove attr (not working ATM)
+      //   while(this.attribs && this.attribs.length > 0){
+      //     this.removeAttribute(this.attribs[0].name);
+      //   }
+      // });
+  }
+  return [dir, filename];
+}
+
+function openNodeToString(node){
+  let string = '';
+  string += `<${node.name}`;
+  for (const [key, value] of Object.entries(node.attributes)) {
+    string += ` ${key}="${value}"`;
+  }
+  string += '>';
+  return string;
+}
+function closeNodeToString(tagName){
+  let string = '';
+  string += `</${tagName}>`;
+  return string;
+}
+
 function parseFinalPackage(config, result, rawResponse, soapHeader, rawRequest){
   logger.debug('parseFinalPackage...');
   const instanceDir = config.INSTANCE_DIR;
@@ -20,37 +139,66 @@ function parseFinalPackage(config, result, rawResponse, soapHeader, rawRequest){
   // TEST ZONE
   const readStream = fs.createReadStream('C:\\Users\\fcourgey\\Downloads\\fresh-gitTest.xml');
   const parser = sax.createStream(true, {});
-  let shouldParse = true;
-  let currentDepth = 0;
-  const maxDepth = 3; // Set the maximum depth you want to parse
-  parser.on('opentag', (node) => {
-    if (!shouldParse) return;
-    currentDepth++;
-    if (currentDepth > maxDepth) {
-      shouldParse = false;
-      console.log(`Maximum depth of ${maxDepth} reached. Stopping further parsing.`);
-      return;
-    }
-    // Process the opening tag
-    console.log(`${currentDepth}<${node.name}`);
+  // Variable pour suivre si nous sommes à l'intérieur de l'élément <entities>
+  let insideEntities = false;
+  // Variable pour suivre si nous sommes à l'intérieur d'un élément <srcSchema>
+  let insideSrcSchema = false;
+  // Variable pour accumuler le contenu de l'élément <srcSchema> courant
+  let srcSchemaContent = '';
+  let currentSchema = null;
+  let currentSchemaNamespace = null;
+  let currentSchemaName = null;
+  let currentNode = null;
 
-    // You can add additional logic here to handle attributes or other node properties
-    if (node.attributes) {
-      // console.log('Attributes:', node.attributes);
+  // Variable pour suivre le nombre d'éléments <srcSchema> traités
+  let srcSchemaCount = 0;
+
+  // Définir les gestionnaires d'événements pour le parseur SAX
+  parser.on('opentag', (node) => {
+    if (node.name === 'entities' && node.attributes && node.attributes.schema) {
+      insideEntities = true;
+      currentSchema = node.attributes.schema;
+      currentSchemaNamespace = currentSchema.split(':')[0];
+      currentSchemaName = currentSchema.split(':')[1];
+      console.log(`Open <entities> with schema=${currentSchema}. Finding <${currentSchemaName}>`);
+    } else if (insideEntities){
+      // console.log(node.name, currentSchemaName, node.name == currentSchemaName);
+      if(node.name === currentSchemaName) {
+        insideSrcSchema = true;
+        // srcSchemaContent = `<${node.name}>`;
+        srcSchemaContent = openNodeToString(node);
+        currentNode = node;
+      } else if(insideSrcSchema){
+        srcSchemaContent += openNodeToString(node);
+      }
+
     }
   });
+
   parser.on('text', (text) => {
-    if (!shouldParse) return;
-    // Process the text content
-    // console.log(`Text content: ${text}`);
+    if (insideSrcSchema) {
+      srcSchemaContent += text;
+    }
   });
 
   parser.on('closetag', (tagName) => {
-    // Process the closing tag
-    console.log(`</${tagName}`);
-    currentDepth--;
-    if (currentDepth < maxDepth) {
-      shouldParse = true;
+    if (tagName === 'entities') {
+      insideEntities = false;
+      console.log(`Fermeture de la balise : </entities>`);
+    } else if (insideSrcSchema && tagName === currentSchemaName) {
+      srcSchemaContent += closeNodeToString(tagName);
+      insideSrcSchema = false;
+
+      // Sauvegarder le contenu de l'élément <srcSchema> dans un fichier séparé
+      const [dir, filename] = getDir(instanceDir, currentSchema, currentNode);
+      const outputFilename = dir+filename;
+      fs.writeFileSync(outputFilename, srcSchemaContent);
+      console.log(`- <${tagName}>: ${outputFilename}`);
+
+      // Incrémenter le compteur d'éléments <srcSchema>
+      srcSchemaCount++;
+    } else if(insideSrcSchema){
+      srcSchemaContent += closeNodeToString(tagName);
     }
   });
 

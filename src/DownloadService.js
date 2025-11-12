@@ -11,7 +11,8 @@ var securityToken, sessionToken;
 // XML Parsing Definition
 exports.htmlparserOptions = {
   xmlMode: true,
-  lowerCaseTags: true,
+  // lowerCaseTags: true,
+  selfClosingTags: true
 };
 
 // Logon
