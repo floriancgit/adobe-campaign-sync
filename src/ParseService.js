@@ -287,5 +287,6 @@ function downloadAndParse(config){
 }
 
 module.exports = {
-  downloadAndParse
+  downloadAndParse,
+  parseFinalPackage
 }
